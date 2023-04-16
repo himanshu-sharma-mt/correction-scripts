@@ -16,7 +16,7 @@ exports.getAllLearningObjectsWithEmbedMissions = async (moduleId, version, compa
     }
 }
 
-exports.getInviteLearners = async (moduleId, companyId, orgId) => {
+exports.getInvitedLearners = async (moduleId, companyId, orgId) => {
     try {
         const response = await axios.post(`${UM_ROUTE.url}`,
             UM_ROUTE.getBodyListAllModules(moduleId),

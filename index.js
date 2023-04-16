@@ -1,5 +1,5 @@
 const { CouchbaseUtil } = require('./cbUtils.js');
-const { getAllLearningObjectsWithEmbedMissions, getInviteLearners, updateAssociatedLo } = require('./axiosUtils')
+const { getAllLearningObjectsWithEmbedMissions, getInvitedLearners, updateAssociatedLo } = require('./axiosUtils')
 const { CE_COUCHBASE, GE_COUCHBASE, VERSION_DOC_KEY, LO_DOC_KEY } = require('./constants.js');
 const contentEngineCouchbase = new CouchbaseUtil();
 const gameEngineCouchbase = new CouchbaseUtil();
@@ -65,7 +65,7 @@ const getEmbedLoMappings = async (moduleId, cname) => {
 }
 
 const correctInvitedLearnersData = async (moduleId, cname, orgId, embedLoMappings) => {
-    const usersList = await getInviteLearners(moduleId, cname, orgId);
+    const usersList = await getInvitedLearners(moduleId, cname, orgId);
     console.log('usersList', usersList);
     const embedMappingDocMap = {};
     for(const missionId of Object.keys(embedLoMappings)) {
