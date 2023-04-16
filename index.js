@@ -1,6 +1,6 @@
 const { CouchbaseUtil } = require('./cbUtils.js');
-const { getAllLearningObjectsWithEmbedMissions, getInviteLearners } = require('./axiosUtils')
-const { CE_COUCHBASE, GE_COUCHBASE } = require('./constants.js');
+const { getAllLearningObjectsWithEmbedMissions, getInviteLearners, updateAssociatedLo } = require('./axiosUtils')
+const { CE_COUCHBASE, GE_COUCHBASE, VERSION_DOC_KEY, LO_DOC_KEY } = require('./constants.js');
 const contentEngineCouchbase = new CouchbaseUtil();
 const gameEngineCouchbase = new CouchbaseUtil();
 
@@ -30,10 +30,11 @@ const correctEmbedLoMappings = async (moduleId, embedLoMappings) => {
            })
            console.log(`transformed EmbedDocLoMapping for ${missionId}:`, transformedEmbedDocLoMapping);
            console.log('doesDocNeedToBeUpdated', doesDocNeedToBeUpdated);
-           // if(doesDocNeedToBeUpdated) {
-           //     //Update embed mission doc
-           //     await contentEngineCouchbase.upsert(`embedMappings.mission.${missionId}`, transformedEmbedDocLoMapping);
-           // }
+           if(doesDocNeedToBeUpdated) {
+               //Update embed mission doc
+               console.log(`updating embedMappings.mission.${missionId}`);
+               await contentEngineCouchbase.upsert(`embedMappings.mission.${missionId}`, transformedEmbedDocLoMapping);
+           }
        }
     }
 }
@@ -63,17 +64,52 @@ const getEmbedLoMappings = async (moduleId, cname) => {
     return embedLoMappings;
 }
 
-const correctInvitedLearnersData = async (moduleId, cname, orgId) => {
+const correctInvitedLearnersData = async (moduleId, cname, orgId, embedLoMappings) => {
     const usersList = await getInviteLearners(moduleId, cname, orgId);
     console.log('usersList', usersList);
+    const embedMappingDocMap = {};
+    for(const missionId of Object.keys(embedLoMappings)) {
+        //Fetch embedMappings.mission.<embedLo> doc
+        embedMappingDocMap[missionId] = await contentEngineCouchbase.get(`embedMappings.mission.${missionId}`);
+    }
+    console.log('embedMappingDocMap', embedMappingDocMap);
+    for(const userId of usersList) {
+        const versionedDoc = await gameEngineCouchbase.get(VERSION_DOC_KEY(moduleId, cname, userId));
+        const reattemptVersion = versionedDoc && versionedDoc['reattemptVersion'];
+        console.log(`reattemptVersion for user ${userId}:`, reattemptVersion);
+        for(const missionId of Object.keys(embedMappingDocMap)) {
+            const mappingsDoc = embedMappingDocMap[missionId];
+            if(Array.isArray(mappingsDoc['loMapping']) && Array.isArray(mappingsDoc['entityMapping'])) {
+                for(let index = 0; index < mappingsDoc['entityMapping'].length; index++) {
+                    if(moduleId === mappingsDoc['entityMapping'][index]) {
+                        const loId = mappingsDoc['loMapping'][index];
+                        if(loId) {
+                            try {
+                                console.log(`Fetching Lo Doc for user: ${userId} and loId: ${loId}:`);
+                                const loDoc = await gameEngineCouchbase.get(LO_DOC_KEY(moduleId, cname, userId, reattemptVersion, loId));
+                                console.log(`Lo Doc for user: ${userId} and loId: ${loId}:`, loDoc);
+                                if(loDoc && loDoc['embedLoStatus'] && loDoc['embedLoStatus'] === 'AWAIT_REVIEW') {
+                                    //If lo state is in awaiting review state then only make update associated LO call
+                                    console.log('Updating Associated LO for user: ${userId} and loId: ${loId}:');
+                                    await updateAssociatedLo(moduleId, cname, userId, loId);
+                                }
+                            } catch (e) {
+                                console.log(`No doc found for user ${userId} and loId: ${loId}`);
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
 }
 
 const main = async (moduleId, cname, orgId) => {
     try {
         await initialiseCouchbase();
-        // const embedLoMappings = await getEmbedLoMappings(moduleId, cname);
-        // await correctEmbedLoMappings(moduleId, embedLoMappings);
-        await correctInvitedLearnersData(moduleId, cname, orgId);
+        const embedLoMappings = await getEmbedLoMappings(moduleId, cname);
+        await correctEmbedLoMappings(moduleId, embedLoMappings);
+        await correctInvitedLearnersData(moduleId, cname, orgId, embedLoMappings);
     } catch (e) {
         console.log('Got Error: ', e);
     }

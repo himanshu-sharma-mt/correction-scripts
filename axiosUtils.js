@@ -1,5 +1,5 @@
 const axios = require('axios');
-const {CE_ROUTE, UM_ROUTE} = require("./constants");
+const { CE_ROUTE, UM_ROUTE, GE_ROUTE } = require("./constants");
 
 exports.getAllLearningObjectsWithEmbedMissions = async (moduleId, version, companyId) => {
     try {
@@ -32,5 +32,15 @@ exports.getInviteLearners = async (moduleId, companyId, orgId) => {
         return [];
     } catch (error) {
         console.error('Error fetching users:', error);
+    }
+}
+
+exports.updateAssociatedLo = async (moduleId, companyId, userId, loId) => {
+    try {
+        const response = await axios.get(`${GE_ROUTE.url}${GE_ROUTE.updateAssociatedLo(moduleId, userId, loId, companyId)}`);
+        const data = response.data;
+        console.log(`Updated LO for user: ${userId}, module: ${moduleId}, loId: ${loId}`, data);
+    } catch (e) {
+        console.error(`Error updating LO for user: ${userId}, module: ${moduleId}, loId: ${loId}`, error);
     }
 }
