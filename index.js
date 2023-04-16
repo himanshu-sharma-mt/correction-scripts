@@ -11,7 +11,30 @@ const initialiseCouchbase = async () => {
     console.log('Couchbase initialised');
 }
 
-const getSomething = async (moduleId, cname) => {
+const correctEmbedLoMappings = async (moduleId, embedLoMappings) => {
+    for (const missionId of Object.keys(embedLoMappings)) {
+       //Fetch embedMappings.mission.<embedLo> doc
+       const embedMappingDoc = await contentEngineCouchbase.get(`embedMappings.mission.${missionId}`);
+       console.log(`embedMappingDoc for embed LO: ${missionId}: `, embedMappingDoc);
+       const embedDocLoMapping = embedMappingDoc['loMapping'];
+       if(Array.isArray(embedDocLoMapping) && Array.isArray(embedLoMappings[missionId])) {
+           let transformedEmbedDocLoMapping = {...embedMappingDoc};
+           let doesDocNeedToBeUpdated = false;
+           embedLoMappings[missionId].forEach(lo => {
+               //If Lo doesn't exist in embed mapping doc then add an entry in the doc
+               if(!embedDocLoMapping.find(embedLo => embedLo === lo)){
+                   doesDocNeedToBeUpdated = true
+                   transformedEmbedDocLoMapping['loMapping'].push(lo);
+                   transformedEmbedDocLoMapping['entityMapping'].push(moduleId);
+               }
+           })
+           console.log(`transformed EmbedDocLoMapping for ${missionId}:`, transformedEmbedDocLoMapping);
+           console.log('doesDocNeedToBeUpdated', doesDocNeedToBeUpdated);
+       }
+    }
+}
+
+const getEmbedLoMappings = async (moduleId, cname) => {
     //Get module document from CE
     const moduleDocument = await contentEngineCouchbase.get(moduleId);
     const versionsList = Object.keys(moduleDocument['mapPublishHistory']);
@@ -33,12 +56,14 @@ const getSomething = async (moduleId, cname) => {
         })
     }
     console.log('embedLoMappings', embedLoMappings);
+    return embedLoMappings;
 }
 
 const main = async (moduleId, cname) => {
     try {
         await initialiseCouchbase();
-        await getSomething(moduleId, cname);
+        const embedLoMappings = await getEmbedLoMappings(moduleId, cname);
+        await correctEmbedLoMappings(moduleId, embedLoMappings);
     } catch (e) {
         console.log('Got Error: ', e);
     }
