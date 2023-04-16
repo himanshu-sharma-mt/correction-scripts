@@ -1,5 +1,5 @@
 const axios = require('axios');
-const {CE_ROUTE} = require("./constants");
+const {CE_ROUTE, UM_ROUTE} = require("./constants");
 
 exports.getAllLearningObjectsWithEmbedMissions = async (moduleId, version, companyId) => {
     try {
@@ -13,5 +13,24 @@ exports.getAllLearningObjectsWithEmbedMissions = async (moduleId, version, compa
         return result;
     } catch (error) {
         console.error('Error fetching data:', error);
+    }
+}
+
+exports.getInviteLearners = async (moduleId, companyId, orgId) => {
+    try {
+        const response = await axios.post(`${UM_ROUTE.url}`,
+            UM_ROUTE.getBodyListAllModules(moduleId),
+            { headers: UM_ROUTE.getHeaders(companyId, orgId) }
+        );
+        const data = response.data && response.data.data;
+        if(data && data.userGroup &&
+            data.userGroup.listModuleUsers &&
+            data.userGroup.listModuleUsers.invitations &&
+            Array.isArray(data.userGroup.listModuleUsers.invitations)) {
+            return data.userGroup.listModuleUsers.invitations.map((item) => item.user && item.user.userId);
+        }
+        return [];
+    } catch (error) {
+        console.error('Error fetching users:', error);
     }
 }

@@ -1,5 +1,5 @@
-const { CouchbaseUtil } = require('./utils.js');
-const { getAllLearningObjectsWithEmbedMissions } = require('./axiosUtils')
+const { CouchbaseUtil } = require('./cbUtils.js');
+const { getAllLearningObjectsWithEmbedMissions, getInviteLearners } = require('./axiosUtils')
 const { CE_COUCHBASE, GE_COUCHBASE } = require('./constants.js');
 const contentEngineCouchbase = new CouchbaseUtil();
 const gameEngineCouchbase = new CouchbaseUtil();
@@ -30,6 +30,10 @@ const correctEmbedLoMappings = async (moduleId, embedLoMappings) => {
            })
            console.log(`transformed EmbedDocLoMapping for ${missionId}:`, transformedEmbedDocLoMapping);
            console.log('doesDocNeedToBeUpdated', doesDocNeedToBeUpdated);
+           // if(doesDocNeedToBeUpdated) {
+           //     //Update embed mission doc
+           //     await contentEngineCouchbase.upsert(`embedMappings.mission.${missionId}`, transformedEmbedDocLoMapping);
+           // }
        }
     }
 }
@@ -59,14 +63,20 @@ const getEmbedLoMappings = async (moduleId, cname) => {
     return embedLoMappings;
 }
 
-const main = async (moduleId, cname) => {
+const correctInvitedLearnersData = async (moduleId, cname, orgId) => {
+    const usersList = await getInviteLearners(moduleId, cname, orgId);
+    console.log('usersList', usersList);
+}
+
+const main = async (moduleId, cname, orgId) => {
     try {
         await initialiseCouchbase();
-        const embedLoMappings = await getEmbedLoMappings(moduleId, cname);
-        await correctEmbedLoMappings(moduleId, embedLoMappings);
+        // const embedLoMappings = await getEmbedLoMappings(moduleId, cname);
+        // await correctEmbedLoMappings(moduleId, embedLoMappings);
+        await correctInvitedLearnersData(moduleId, cname, orgId);
     } catch (e) {
         console.log('Got Error: ', e);
     }
 }
 
-main('1646517315774284791', '1158975533368761751');
+main('1646517315774284791', '1158975533368761751', '1139071814572614460');
