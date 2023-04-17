@@ -92,7 +92,7 @@ const correctInvitedLearnersData = async (moduleId, cname, orgId, embedLoMapping
                                 console.log(`Lo Doc for user: ${userId} and loId: ${loId}:`, loDoc);
                                 if(loDoc && loDoc['embedLoStatus'] && loDoc['embedLoStatus'] === 'AWAIT_REVIEW') {
                                     //If lo state is in awaiting review state then only make update associated LO call
-                                    console.log('Updating Associated LO for user: ${userId} and loId: ${loId}:');
+                                    console.log(`Updating Associated LO for user: ${userId} and loId: ${loId}:`);
                                     await updateAssociatedLo(moduleId, cname, userId, loId);
                                 }
                             } catch (e) {
@@ -117,4 +117,4 @@ const main = async (moduleId, cname, orgId, forUser) => {
     }
 }
 
-main('1646517315774284791', '1158975533368761751', '1139071814572614460');
+main('1629116201813001066', '1191781057039739045', '1191781047907247281');

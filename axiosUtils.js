@@ -1,5 +1,6 @@
 const axios = require('axios');
 const { CE_ROUTE, UM_ROUTE, GE_ROUTE } = require("./constants");
+const { writeLog } = require('./writeToFile');
 
 exports.getAllLearningObjectsWithEmbedMissions = async (moduleId, version, companyId) => {
     try {
@@ -40,6 +41,7 @@ exports.updateAssociatedLo = async (moduleId, companyId, userId, loId) => {
         const response = await axios.get(`${GE_ROUTE.url}${GE_ROUTE.updateAssociatedLo(moduleId, userId, loId, companyId)}`);
         const data = response.data;
         console.log(`Updated LO for user: ${userId}, module: ${moduleId}, loId: ${loId}`, data);
+        writeLog(`Updated LO for user: ${userId}, module: ${moduleId}, loId: ${loId}`);
     } catch (e) {
         console.error(`Error updating LO for user: ${userId}, module: ${moduleId}, loId: ${loId}`, error);
     }
