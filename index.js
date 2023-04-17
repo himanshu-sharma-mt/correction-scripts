@@ -35,6 +35,8 @@ const correctEmbedLoMappings = async (moduleId, embedLoMappings) => {
                console.log(`updating embedMappings.mission.${missionId}`);
                await contentEngineCouchbase.upsert(`embedMappings.mission.${missionId}`, transformedEmbedDocLoMapping);
            }
+       } else {
+           console.log('embedDocLoMapping or embedLoMappings[missionId] is not array');
        }
     }
 }
@@ -64,7 +66,7 @@ const getEmbedLoMappings = async (moduleId, cname) => {
     return embedLoMappings;
 }
 
-const correctInvitedLearnersData = async (moduleId, cname, orgId, embedLoMappings) => {
+const correctInvitedLearnersData = async (moduleId, cname, orgId, embedLoMappings, forUser) => {
     const usersList = await getInvitedLearners(moduleId, cname, orgId);
     console.log('usersList', usersList);
     const embedMappingDocMap = {};
@@ -83,7 +85,7 @@ const correctInvitedLearnersData = async (moduleId, cname, orgId, embedLoMapping
                 for(let index = 0; index < mappingsDoc['entityMapping'].length; index++) {
                     if(moduleId === mappingsDoc['entityMapping'][index]) {
                         const loId = mappingsDoc['loMapping'][index];
-                        if(loId) {
+                        if(loId && (forUser == null || forUser === userId)) {
                             try {
                                 console.log(`Fetching Lo Doc for user: ${userId} and loId: ${loId}:`);
                                 const loDoc = await gameEngineCouchbase.get(LO_DOC_KEY(moduleId, cname, userId, reattemptVersion, loId));
@@ -104,12 +106,12 @@ const correctInvitedLearnersData = async (moduleId, cname, orgId, embedLoMapping
     }
 }
 
-const main = async (moduleId, cname, orgId) => {
+const main = async (moduleId, cname, orgId, forUser) => {
     try {
         await initialiseCouchbase();
         const embedLoMappings = await getEmbedLoMappings(moduleId, cname);
         await correctEmbedLoMappings(moduleId, embedLoMappings);
-        await correctInvitedLearnersData(moduleId, cname, orgId, embedLoMappings);
+        await correctInvitedLearnersData(moduleId, cname, orgId, embedLoMappings, forUser);
     } catch (e) {
         console.log('Got Error: ', e);
     }
