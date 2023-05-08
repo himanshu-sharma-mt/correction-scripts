@@ -36,6 +36,28 @@ exports.getInvitedLearners = async (moduleId, companyId, orgId) => {
     }
 }
 
+exports.getInvitedLearnersWithVersion = async (moduleId, companyId, orgId, from) => {
+    try {
+        const response = await axios.post(`${UM_ROUTE.url}`,
+            UM_ROUTE.getBodyInvitedModulesWithVersion(moduleId, from),
+            { headers: UM_ROUTE.getHeaders(companyId, orgId) }
+        );
+        const data = response.data && response.data.data;
+        if(data && data.userGroup &&
+            data.userGroup.listModuleUsers &&
+            data.userGroup.listModuleUsers.invitations &&
+            Array.isArray(data.userGroup.listModuleUsers.invitations)) {
+            return data.userGroup.listModuleUsers.invitations.map((item) => ({
+                userId: item.user && item.user.userId,
+                version: item.module && item.module.version
+            }));
+        }
+        return [];
+    } catch (error) {
+        console.error('Error fetching users:', error);
+    }
+}
+
 exports.updateAssociatedLo = async (moduleId, companyId, userId, loId) => {
     try {
         const response = await axios.get(`${GE_ROUTE.url}${GE_ROUTE.updateAssociatedLo(moduleId, userId, loId, companyId)}`);

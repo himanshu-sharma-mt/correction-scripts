@@ -1,6 +1,7 @@
 const { CouchbaseUtil } = require('./cbUtils.js');
-const { getAllLearningObjectsWithEmbedMissions, getInvitedLearners, updateAssociatedLo } = require('./axiosUtils')
-const { CE_COUCHBASE, GE_COUCHBASE, VERSION_DOC_KEY, LO_DOC_KEY } = require('./constants.js');
+const { getAllLearningObjectsWithEmbedMissions, getInvitedLearners, updateAssociatedLo, getInvitedLearnersWithVersion } = require('./axiosUtils')
+const { CE_COUCHBASE, GE_COUCHBASE, VERSION_DOC_KEY, LO_DOC_KEY, GE_SUMMARY_DOC_KEY } = require('./constants.js');
+const {writeLog} = require("./writeToFile");
 const contentEngineCouchbase = new CouchbaseUtil();
 const gameEngineCouchbase = new CouchbaseUtil();
 
@@ -106,6 +107,37 @@ const correctInvitedLearnersData = async (moduleId, cname, orgId, embedLoMapping
     }
 }
 
+const checkForVersionMismatchForModule = async (moduleId, cname, orgId) => {
+    for(let from = 0; from < 7500; from +=500) {
+        const usersList = await getInvitedLearnersWithVersion(moduleId, cname, orgId, from);
+        for (const user of usersList) {
+            try {
+                const versionedDoc = await gameEngineCouchbase.get(VERSION_DOC_KEY(moduleId, cname, user.userId));
+                const reattemptVersion = versionedDoc && versionedDoc['reattemptVersion'];
+                const geSummaryDoc = await gameEngineCouchbase.get(GE_SUMMARY_DOC_KEY(moduleId, cname, user.userId, reattemptVersion));
+                const versionFromGE = geSummaryDoc && geSummaryDoc['version'];
+                console.log(`for ${user.userId} ->  ${versionFromGE} : ${user.version}`);
+                if (user.version !== versionFromGE) {
+                    console.log(`version mismatch for user ${user.userId} b/w GE: ${versionFromGE} and gql: ${user.version}`);
+                    writeLog(`version mismatch for user ${user.userId} b/w GE: ${versionFromGE} and gql: ${user.version}`);
+                }
+            } catch (e) {
+                console.log('failed for user', user.userId, e);
+            }
+        }
+    }
+}
+
+const checkForVersionMismatch = async (moduleId, cname, orgId) => {
+    try {
+        await initialiseCouchbase();
+        await checkForVersionMismatchForModule(moduleId, cname, orgId);
+    } catch (e) {
+        console.log('Got Error: ', e);
+    }
+}
+
+
 const main = async (moduleId, cname, orgId, forUser) => {
     try {
         await initialiseCouchbase();
@@ -117,4 +149,5 @@ const main = async (moduleId, cname, orgId, forUser) => {
     }
 }
 
+// checkForVersionMismatch('1214978629974262886', '1069834390334531305', '1069834383551410377');
 main('1629116201813001066', '1191781057039739045', '1191781047907247281');

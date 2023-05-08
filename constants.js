@@ -33,8 +33,14 @@ exports.UM_ROUTE = {
         "org_id": orgId,
         "company_id": cname,
         "req_id": "script_correction"
+    }),
+    getBodyInvitedModulesWithVersion: (moduleId, from) => ({
+        "operationName": "ListUserModules",
+        "variables": {},
+        "query": `query ListUserModules {\n  userGroup {\n    listModuleUsers(entityId: "${moduleId}", listModuleUsersFilter: {completionStatus: [NOT_STARTED, IN_PROGRESS, COMPLETED], sortField: INVITED_ON, from: ${from}, size: 500}) {\n      invitations {\n        moduleId\n        module {\n          version\n        }\n        user {\n          userId\n        }\n      }\n    }\n  }\n}\n`
     })
 };
 
 exports.VERSION_DOC_KEY = (moduleId, cname, userId) => `C|${cname}|G|${moduleId}|U|${userId}|V`;
+exports.GE_SUMMARY_DOC_KEY = (moduleId, cname, userId, reattemptVersion) => `C|${cname}|G|${moduleId}|U|${userId}|R|${reattemptVersion}|GE`;
 exports.LO_DOC_KEY = (moduleId, cname, userId, reattemptVersion, loId) => `C|${cname}|G|${moduleId}|U|${userId}|R|${reattemptVersion}|LO|${loId}`;
