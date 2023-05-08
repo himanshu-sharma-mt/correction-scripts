@@ -1,13 +1,13 @@
 exports.CE_COUCHBASE = {
-    username: 'mindtickle',
-    password: 'd36b98ef7c6696eda2a6ber3',
+    username: 'CB_USERNAME',
+    password: 'CB_PASSWORD',
     url: 'cb-6-node-1.internal.mindtickle.com',
     bucket: 'ce',
 }
 
 exports.GE_COUCHBASE = {
-    username: 'mindtickle',
-    password: 'd36b98ef7c6696eda2a6ber3',
+    username: 'CB_USERNAME',
+    password: 'CB_PASSWORD',
     url: '10.0.3.141',
     bucket: 'gameengine',
 };
